@@ -209,5 +209,15 @@ namespace mobie_app_api.Areas.CockTail.Controllers
         {
             return _context.CockTails.Any(e => e.Id == id);
         }
+
+
+        // API 
+        [HttpGet]
+        [Route("/api/cocktails")]
+        public async Task<IActionResult> GetCockTails()
+        {
+            var cockTail = await _context.CockTails.ToListAsync();
+            return Ok(cockTail);
+        }
     }
 }

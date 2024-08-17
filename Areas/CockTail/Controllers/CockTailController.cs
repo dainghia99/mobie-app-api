@@ -6,29 +6,32 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using mobie_app_api.Models;
+using CockTailModel = mobie_app_api.Models.CockTail;
 
-namespace mobie_app_api.Areas.Product.Controllers
+namespace mobie_app_api.Areas.CockTail.Controllers
 {
-    [Area("Product")]
-    [Route("/product/[action]/{id?}")]
-    public class ProductController : Controller
+    [Area("CockTail")]
+    [Route("/cocktail/[action]/{id?}")]
+    public class CockTailController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<CockTailController> _logger;
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProductController(AppDbContext context, IWebHostEnvironment webHostEnvironment)
+        public CockTailController(AppDbContext context, IWebHostEnvironment webHostEnvironment, ILogger<CockTailController> logger)
         {
             _context = context;
             _webHostEnvironment = webHostEnvironment;
+            _logger = logger;
         }
 
-        // GET: Product/Product
+        // GET: CockTail/CockTail
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Cats.ToListAsync());
+            return View(await _context.CockTails.ToListAsync());
         }
 
-        // GET: Product/Product/Details/5
+        // GET: CockTail/CockTail/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -36,56 +39,54 @@ namespace mobie_app_api.Areas.Product.Controllers
                 return NotFound();
             }
 
-            var cat = await _context.Cats
+            var cockTail = await _context.CockTails
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (cat == null)
+            if (cockTail == null)
             {
                 return NotFound();
             }
 
-            return View(cat);
+            return View(cockTail);
         }
 
-        // GET: Product/Product/Create
+        // GET: CockTail/CockTail/Create
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Product/Product/Create
+        // POST: CockTail/CockTail/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Description,Image")] Cat cat, IFormFile file)
+        public async Task<IActionResult> Create([Bind("Name,Price,Description,Image")] CockTailModel cockTail, IFormFile file)
         {
             if (ModelState.IsValid)
             {
-
-                // Images
+                // Xử lý file
                 var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "Images", file.FileName);
                 using var fileStream = new FileStream(filePath, FileMode.Create);
 
-                // Create
-                var catCreate = new Cat()
+                var cockTailCreate = new CockTailModel()
                 {
-                    Name = cat.Name,
-                    Description = cat.Description,
+                    Name = cockTail.Name,
+                    Price = cockTail.Price,
+                    Description = cockTail.Description,
                     Image = "/Images/" + file.FileName
                 };
 
-                _context.Add(catCreate);
+                _context.Add(cockTailCreate);
                 file.CopyTo(fileStream);
-
                 await _context.SaveChangesAsync();
+
+
                 return RedirectToAction(nameof(Index));
-
-
             }
-            return View(cat);
+            return View(cockTail);
         }
 
-        // GET: Product/Product/Edit/5
+        // GET: CockTail/CockTail/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -93,22 +94,22 @@ namespace mobie_app_api.Areas.Product.Controllers
                 return NotFound();
             }
 
-            var cat = await _context.Cats.FindAsync(id);
-            if (cat == null)
+            var cockTail = await _context.CockTails.FindAsync(id);
+            if (cockTail == null)
             {
                 return NotFound();
             }
-            return View(cat);
+            return View(cockTail);
         }
 
-        // POST: Product/Product/Edit/5
+        // POST: CockTail/CockTail/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Image")] Cat cat, IFormFile file)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Price,Description,Image")] CockTailModel cockTail, IFormFile file)
         {
-            if (id != cat.Id)
+            if (id != cockTail.Id)
             {
                 return NotFound();
             }
@@ -118,23 +119,46 @@ namespace mobie_app_api.Areas.Product.Controllers
                 try
                 {
 
+                    var cockTailUpdate = await _context.CockTails.FirstOrDefaultAsync(c => c.Id == id);
+
+                    if (cockTailUpdate is null)
+                    {
+                        return NotFound();
+                    }
+
+                    // Xoá đường dẫn file cũ
+
+                    if (!string.IsNullOrEmpty(cockTailUpdate.Image))
+                    {
+                        var oldFilePath = Path.Combine(_webHostEnvironment.WebRootPath, cockTailUpdate.Image.TrimStart('/'));
+                        if (System.IO.File.Exists(oldFilePath))
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                        }
+                    }
+
+                    // Xoá string file trong models
+                    cockTailUpdate.Image = null;
+
+                    // Xử lý file
                     var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "Images", file.FileName);
                     using var fileStream = new FileStream(filePath, FileMode.Create);
 
-                    var catUpdate = new Cat()
-                    {
-                        Id = cat.Id,
-                        Name = cat.Name,
-                        Description = cat.Description,
-                        Image = "/Images/" + file.FileName
-                    };
 
-                    _context.Update(catUpdate);
+                    cockTailUpdate.Id = cockTail.Id;
+                    cockTailUpdate.Name = cockTail.Name;
+                    cockTailUpdate.Price = cockTail.Price;
+                    cockTailUpdate.Description = cockTail.Description;
+                    cockTailUpdate.Image = "/Images/" + file.FileName;
+
+                    _context.Update(cockTailUpdate);
+                    file.CopyTo(fileStream);
                     await _context.SaveChangesAsync();
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CatExists(cat.Id))
+                    if (!CockTailExists(cockTail.Id))
                     {
                         return NotFound();
                     }
@@ -145,10 +169,10 @@ namespace mobie_app_api.Areas.Product.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(cat);
+            return View(cockTail);
         }
 
-        // GET: Product/Product/Delete/5
+        // GET: CockTail/CockTail/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -156,45 +180,34 @@ namespace mobie_app_api.Areas.Product.Controllers
                 return NotFound();
             }
 
-            var cat = await _context.Cats
+            var cockTail = await _context.CockTails
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (cat == null)
+            if (cockTail == null)
             {
                 return NotFound();
             }
 
-            return View(cat);
+            return View(cockTail);
         }
 
-        // POST: Product/Product/Delete/5
+        // POST: CockTail/CockTail/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var cat = await _context.Cats.FindAsync(id);
-            if (cat != null)
+            var cockTail = await _context.CockTails.FindAsync(id);
+            if (cockTail != null)
             {
-                _context.Cats.Remove(cat);
+                _context.CockTails.Remove(cockTail);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CatExists(int id)
+        private bool CockTailExists(int id)
         {
-            return _context.Cats.Any(e => e.Id == id);
-        }
-
-        // API
-
-
-        [HttpGet]
-        [Route("/api/products/")]
-        public async Task<IActionResult> GetAll()
-        {
-            var cats = await _context.Cats.ToArrayAsync();
-            return Ok(cats);
+            return _context.CockTails.Any(e => e.Id == id);
         }
     }
 }

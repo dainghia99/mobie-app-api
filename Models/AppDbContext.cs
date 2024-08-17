@@ -22,6 +22,6 @@ namespace mobie_app_api.Models
             //     }
             // }
         }
-        public DbSet<Cat> Cats { get; set; }
+        public DbSet<CockTail> CockTails { get; set; }
     }
 }

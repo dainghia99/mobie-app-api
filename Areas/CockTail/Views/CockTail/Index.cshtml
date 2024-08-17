@@ -1,17 +1,21 @@
-@model IEnumerable<mobie_app_api.Models.Cat>
+@model IEnumerable<mobie_app_api.Models.CockTail>
 
 @{
-    Layout = "_Layout";
+    Layout = "_layout";
 }
 
+
 <p>
-    <a asp-action="Create">Thêm mới</a>
+    <a asp-action="Create" class="btn btn-primary">Thêm mới</a>
 </p>
 <table class="table">
     <thead>
         <tr>
             <th>
                 @Html.DisplayNameFor(model => model.Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Price)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.Description)
@@ -29,10 +33,13 @@
                 @Html.DisplayFor(modelItem => item.Name)
             </td>
             <td>
+                @Html.DisplayFor(modelItem => item.Price)
+            </td>
+            <td>
                 @Html.DisplayFor(modelItem => item.Description)
             </td>
             <td>
-                <img width="50" height="50" src="@Html.DisplayFor(modelItem => item.Image)" alt="anh">
+                <img src="@Html.DisplayFor(modelItem => item.Image)" alt="Ảnh" width="100" height="100">
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Chỉnh sửa</a> |
